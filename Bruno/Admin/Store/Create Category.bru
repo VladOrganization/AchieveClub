@@ -1,0 +1,17 @@
+meta {
+  name: Create Category
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/categories
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "title": "New Category"
+  }
+}

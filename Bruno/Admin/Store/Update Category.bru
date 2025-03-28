@@ -1,0 +1,18 @@
+meta {
+  name: Update Category
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{base_url}}/categories/1
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "title": "Edited",
+    "color": "ffffff"
+  }
+}
