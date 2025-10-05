@@ -26,11 +26,11 @@ namespace AchieveClub.Server
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            var otlpExporterConnectionString = builder.Configuration.GetConnectionString("DashboardConnection")
+            /*var otlpExporterConnectionString = builder.Configuration.GetConnectionString("DashboardConnection")
                 ?? throw new Exception("Add 'DashboardConnection' to config");
-            var otlpExporterEndpoint = new Uri(otlpExporterConnectionString);
+            var otlpExporterEndpoint = new Uri(otlpExporterConnectionString);*/
 
-            builder.Services.AddOpenTelemetry()
+            /*builder.Services.AddOpenTelemetry()
                 .ConfigureResource(resource => resource.AddService("AchieveClub"))
                 .WithMetrics(metrics =>
                 {
@@ -53,7 +53,7 @@ namespace AchieveClub.Server
             {
                 logging.IncludeFormattedMessage = true;
                 logging.AddOtlpExporter(configure => configure.Endpoint = otlpExporterEndpoint);
-            });
+            });*/
 
             builder.Services.AddCors();
 
