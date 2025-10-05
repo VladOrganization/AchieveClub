@@ -34,5 +34,5 @@ jobs:
           file: AchieveClub.Server/Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/achieve_club_backend:latest
-            ghcr.io/${{ github.repository_owner }}/achieve_club_backend:${{ github.run_number }}
+            ghcr.io/${{ toLower(github.repository_owner) }}/achieve_club_backend:latest
+            ghcr.io/${{ toLower(github.repository_owner) }}/achieve_club_backend:${{ github.run_number }}
