@@ -15,7 +15,6 @@ namespace AchieveClub.Server.Controllers
     public class EmailController(
         ILogger<EmailController> logger,
         EmailProofService emailProof,
-        EmailSettings emailSettings,
         ApplicationContext db
         ) : ControllerBase
     {
@@ -35,9 +34,9 @@ namespace AchieveClub.Server.Controllers
                 return Conflict("email");
             }
             
-            int proofCode = emailProof.GenerateProofCode(emailAddress);
-
-            var apiKey = emailSettings.ApiKey;
+            emailProof.GenerateProofCode(emailAddress);
+            logger.LogInformation("Code successfully stored, Email: {emailAddress}", emailAddress);
+            /*var apiKey = emailSettings.ApiKey;
             var client = new SendGridClient(apiKey);
             var from = new EmailAddress(emailSettings.Email, emailSettings.Name);
             var subject = "Подтвердите смену пароля";
@@ -52,7 +51,7 @@ namespace AchieveClub.Server.Controllers
                 return BadRequest(response.StatusCode);
             }
 
-            logger.LogInformation("Code sent successfully for {emailAddress}", emailAddress);
+            logger.LogInformation("Code sent successfully for {emailAddress}", emailAddress);*/
             return NoContent();
         }
         
@@ -86,9 +85,11 @@ namespace AchieveClub.Server.Controllers
                 return Conflict("email");
             }
             
-            int proofCode = emailProof.GenerateProofCode(emailAddress);
+            emailProof.GenerateProofCode(emailAddress);
 
-            var apiKey = emailSettings.ApiKey;
+            logger.LogInformation("Code successfully stored, Email: {emailAddress}", emailAddress);
+            
+            /*var apiKey = emailSettings.ApiKey;
             var client = new SendGridClient(apiKey);
             var from = new EmailAddress(emailSettings.Email, emailSettings.Name);
             var subject = "Подтвердите новую почту";
@@ -103,7 +104,7 @@ namespace AchieveClub.Server.Controllers
                 return BadRequest(response.StatusCode);
             }
 
-            logger.LogInformation("Code sent successfully for {emailAddress}", emailAddress);
+            logger.LogInformation("Code sent successfully for {emailAddress}", emailAddress);*/
             return NoContent();
         }
         
@@ -122,9 +123,11 @@ namespace AchieveClub.Server.Controllers
                 return Conflict("email");
             }
 
-            int proofCode = emailProof.GenerateProofCode(emailAddress);
+            emailProof.GenerateProofCode(emailAddress);
+            
+            logger.LogInformation("Code successfully stored, Email: {emailAddress}", emailAddress);
 
-            var apiKey = emailSettings.ApiKey;
+            /*var apiKey = emailSettings.ApiKey;
             var client = new SendGridClient(apiKey);
             var from = new EmailAddress(emailSettings.Email, emailSettings.Name);
             var subject = "Подтвердите электронную почту";
@@ -139,7 +142,7 @@ namespace AchieveClub.Server.Controllers
                 return BadRequest(response.StatusCode);
             }
 
-            logger.LogInformation("Code sent successfully for {emailAddress}", emailAddress);
+            logger.LogInformation("Code sent successfully for {emailAddress}", emailAddress);*/
             return NoContent();
         }
 
