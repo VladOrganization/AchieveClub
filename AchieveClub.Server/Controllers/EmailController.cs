@@ -1,12 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using AchieveClub.Server.ApiContracts.Auth.Request;
-using AchieveClub.Server.Auth;
 using AchieveClub.Server.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using SendGrid.Helpers.Mail;
-using SendGrid;
 
 namespace AchieveClub.Server.Controllers
 {
@@ -18,6 +15,12 @@ namespace AchieveClub.Server.Controllers
         ApplicationContext db
         ) : ControllerBase
     {
+        [HttpGet("proof-codes")]
+        //[Authorize(Roles = "Admin")]
+        public ActionResult<List<EmailProofService.EmailProofItem>> ListProofCodes()
+        {
+            return emailProof.GetValidProofItems();
+        }
 
         [HttpPost("change_password")]
         public async Task<ActionResult> SendChangePasswordCode([FromBody] string emailAddress, CancellationToken ct)
@@ -36,22 +39,6 @@ namespace AchieveClub.Server.Controllers
             
             emailProof.GenerateProofCode(emailAddress);
             logger.LogInformation("Code successfully stored, Email: {emailAddress}", emailAddress);
-            /*var apiKey = emailSettings.ApiKey;
-            var client = new SendGridClient(apiKey);
-            var from = new EmailAddress(emailSettings.Email, emailSettings.Name);
-            var subject = "Подтвердите смену пароля";
-            var to = new EmailAddress(emailAddress);
-            var htmlContent = $"<h3>Ваш код: <code>{proofCode}</code></h3>";
-            var msg = MailHelper.CreateSingleEmail(from, to, subject, "", htmlContent);
-            var response = await client.SendEmailAsync(msg, ct);
-
-            if (response.IsSuccessStatusCode == false)
-            {
-                logger.LogInformation("Could not send proof code email");
-                return BadRequest(response.StatusCode);
-            }
-
-            logger.LogInformation("Code sent successfully for {emailAddress}", emailAddress);*/
             return NoContent();
         }
         
@@ -89,22 +76,6 @@ namespace AchieveClub.Server.Controllers
 
             logger.LogInformation("Code successfully stored, Email: {emailAddress}", emailAddress);
             
-            /*var apiKey = emailSettings.ApiKey;
-            var client = new SendGridClient(apiKey);
-            var from = new EmailAddress(emailSettings.Email, emailSettings.Name);
-            var subject = "Подтвердите новую почту";
-            var to = new EmailAddress(emailAddress);
-            var htmlContent = $"<h3>Ваш код: <code>{proofCode}</code></h3>";
-            var msg = MailHelper.CreateSingleEmail(from, to, subject, "", htmlContent);
-            var response = await client.SendEmailAsync(msg, ct);
-
-            if (response.IsSuccessStatusCode == false)
-            {
-                logger.LogInformation("Could not send proof code email");
-                return BadRequest(response.StatusCode);
-            }
-
-            logger.LogInformation("Code sent successfully for {emailAddress}", emailAddress);*/
             return NoContent();
         }
         
@@ -127,22 +98,6 @@ namespace AchieveClub.Server.Controllers
             
             logger.LogInformation("Code successfully stored, Email: {emailAddress}", emailAddress);
 
-            /*var apiKey = emailSettings.ApiKey;
-            var client = new SendGridClient(apiKey);
-            var from = new EmailAddress(emailSettings.Email, emailSettings.Name);
-            var subject = "Подтвердите электронную почту";
-            var to = new EmailAddress(emailAddress);
-            var htmlContent = $"<h3>Ваш код: <code>{proofCode}</code></h3>";
-            var msg = MailHelper.CreateSingleEmail(from, to, subject, "", htmlContent);
-            var response = await client.SendEmailAsync(msg);
-
-            if (response.IsSuccessStatusCode == false)
-            {
-                logger.LogInformation("Could not send proof code email");
-                return BadRequest(response.StatusCode);
-            }
-
-            logger.LogInformation("Code sent successfully for {emailAddress}", emailAddress);*/
             return NoContent();
         }
 

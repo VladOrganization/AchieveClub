@@ -62,9 +62,6 @@ namespace AchieveClub.Server
             builder.Services.AddOutputCache()
                 .AddStackExchangeRedisOutputCache(options => options.Configuration = redisConnectionString);
             builder.Services.AddStackExchangeRedisCache(options => { options.Configuration = redisConnectionString; });
-#pragma warning disable EXTEXP0018
-            builder.Services.AddHybridCache();
-#pragma warning restore EXTEXP0018
 
             builder.Services.AddResponseCompression(options =>
             {
@@ -76,10 +73,6 @@ namespace AchieveClub.Server
             {
                 options.Level = CompressionLevel.SmallestSize;
             });
-
-            var emailSettings = new EmailSettings();
-            builder.Configuration.Bind("EmailSettings", emailSettings);
-            builder.Services.AddSingleton(emailSettings);
 
             var jwtSettings = new JwtSettings();
             builder.Configuration.Bind("JwtSettings", jwtSettings);

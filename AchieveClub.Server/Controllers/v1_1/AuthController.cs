@@ -37,7 +37,7 @@ namespace AchieveClub.Server.Controllers.v1_1
 
                 (string token, long expire) = GenerateJwtByUser(user);
 
-                return new TokenPairResponce(user.Id, token, user.RefreshToken, expire);
+                return new TokenPairResponce(user.Id, token, user.RefreshToken, expire, user.Role.Id);
             }
             else return BadRequest();
         }

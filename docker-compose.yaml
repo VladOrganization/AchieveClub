@@ -1,4 +1,18 @@
 services:
+  frontend:
+    image: ghcr.io/vladorganization/achieve_club_frontend:latest
+    container_name: achieve_club_frontend
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - certs:/etc/nginx/ssl:ro
+    environment:
+      - VITE_API_URL=https://byteschool.online
+      - VITE_API_PORT=5001
+    networks:
+      - backend
   backend:
     image: ghcr.io/vladorganization/achieve_club_backend:latest
     container_name: achieve_club_backend
