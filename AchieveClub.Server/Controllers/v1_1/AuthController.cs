@@ -84,7 +84,7 @@ namespace AchieveClub.Server.Controllers.v1_1
 
             emailProof.DeleteProofCode(model.EmailAddress);
             
-            return new TokenPairResponce(newUser.Id, token, newUser.RefreshToken, expire);
+            return new TokenPairResponce(newUser.Id, token, newUser.RefreshToken, expire, newUser.Role.Id);
         }
 
         [HttpPost("refresh")]
@@ -106,7 +106,7 @@ namespace AchieveClub.Server.Controllers.v1_1
 
             (string token, long expire) = GenerateJwtByUser(user);
 
-            return new TokenPairResponce(user.Id, token, user.RefreshToken, expire);
+            return new TokenPairResponce(user.Id, token, user.RefreshToken, expire, user.Role.Id);
         }
 
         private (string, long) GenerateJwtByUser(UserDbo user)
