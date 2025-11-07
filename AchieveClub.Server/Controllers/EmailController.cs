@@ -16,7 +16,7 @@ namespace AchieveClub.Server.Controllers
         ) : ControllerBase
     {
         [HttpGet("proof-codes")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public ActionResult<List<EmailProofService.EmailProofItem>> ListProofCodes()
         {
             return emailProof.GetValidProofItems();
