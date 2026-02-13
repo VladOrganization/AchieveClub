@@ -21,7 +21,7 @@ namespace AchieveClub.Server.Controllers
             return await Upload(file, new Size(300, 120));
         }
 
-        public async Task<ActionResult> Upload(IFormFile file, Size imageSize)
+        private async Task<ActionResult> Upload(IFormFile file, Size imageSize)
         {
             if (file.Length == 0)
             {

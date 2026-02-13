@@ -17,6 +17,7 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 using System.IO.Compression;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using Serilog;
 
 namespace AchieveClub.Server
 {
@@ -56,6 +57,9 @@ namespace AchieveClub.Server
             });*/
 
             builder.Services.AddCors();
+            
+            builder.Host.UseSerilog((context, configuration) =>
+                configuration.ReadFrom.Configuration(context.Configuration));
 
             var redisConnectionString = builder.Configuration.GetConnectionString("RedisConnection")
                                         ?? throw new InvalidConfigurationException("Add 'RedisConnection' to config");
