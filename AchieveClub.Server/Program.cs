@@ -3,6 +3,7 @@ using AchieveClub.Server.Services;
 using AchieveClub.Server.SwaggerVersioning;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -17,6 +18,7 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 using System.IO.Compression;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Threading.RateLimiting;
 using Serilog;
 
 namespace AchieveClub.Server
@@ -127,6 +129,27 @@ namespace AchieveClub.Server
                     options.Cookie.IsEssential = true;
                 });
 
+            builder.Services.AddRateLimiter(options =>
+            {
+                options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+                {
+                    var clientIp = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+                    return RateLimitPartition.GetFixedWindowLimiter(clientIp, _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 100,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        QueueLimit = 0
+                    });
+                });
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+                options.OnRejected = async (context, cancellationToken) =>
+                {
+                    context.HttpContext.Response.Headers.RetryAfter = "60";
+                    await context.HttpContext.Response.WriteAsync("Too many requests. Please try again later.", cancellationToken);
+                };
+            });
+
             builder.Services.AddControllers();
 
             builder.Services.AddSignalR();
@@ -205,6 +228,8 @@ namespace AchieveClub.Server
 
             app.UseAuthentication();
             app.UseAuthorization();
+
+            app.UseRateLimiter();
 
             app.UseResponseCompression();
 
