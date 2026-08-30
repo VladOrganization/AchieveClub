@@ -14,7 +14,8 @@ namespace AchieveClub.Server.Controllers
     public class UsersController(
         ApplicationContext db,
         ILogger<UsersController> logger,
-        EmailProofService emailProof
+        EmailProofService emailProof,
+        IOutputCacheStore cache
         ) : ControllerBase
     {
         public record ChangeRoleRequest([Required] int UserId, [Required] int RoleId);
@@ -151,12 +152,32 @@ namespace AchieveClub.Server.Controllers
                 return NotFound($"User with userId:{userId} not found");
             }
 
-            if (request.FirstName is { Length: >= 2 }) user.FirstName = request.FirstName;
-            if (request.LastName is { Length: >= 5 }) user.LastName = request.LastName;
+            var firstName = request.FirstName?.Trim();
+            var lastName = request.LastName?.Trim();
+
+            if (string.IsNullOrEmpty(firstName) && string.IsNullOrEmpty(lastName))
+            {
+                return BadRequest("Specify first name or last name");
+            }
+
+            if (!string.IsNullOrEmpty(firstName))
+            {
+                if (firstName.Length is < 2 or > 100)
+                    return BadRequest("First name must be between 2 and 100 characters");
+                user.FirstName = firstName;
+            }
+
+            if (!string.IsNullOrEmpty(lastName))
+            {
+                if (lastName.Length is < 2 or > 100)
+                    return BadRequest("Last name must be between 2 and 100 characters");
+                user.LastName = lastName;
+            }
 
             await db.SaveChangesAsync(ct);
-            
-            return  NoContent();
+            await cache.EvictByTagAsync("users", ct);
+
+            return NoContent();
         }
 
         [Authorize]

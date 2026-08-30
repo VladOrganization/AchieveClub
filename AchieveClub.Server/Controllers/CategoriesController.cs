@@ -1,6 +1,7 @@
 ﻿using AchieveClub.Server.ApiContracts.Categories.Request;
 using AchieveClub.Server.ApiContracts.Categories.Response;
 using AchieveClub.Server.RepositoryItems;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.EntityFrameworkCore;
@@ -37,6 +38,7 @@ public class CategoriesController(ApplicationContext db) : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Supervisor, Admin")]
     public async Task<ActionResult> CreateCategory([FromBody] CreateCategoryRequest request)
     {
         var newCategory = new CategoryDbo
@@ -57,6 +59,7 @@ public class CategoriesController(ApplicationContext db) : ControllerBase
     }
 
     [HttpDelete("{categoryId}")]
+    [Authorize(Roles = "Supervisor, Admin")]
     public async Task<ActionResult> DeleteCategory([FromRoute] int categoryId)
     {
         var category = await db.Categories.FirstOrDefaultAsync(c => c.Id == categoryId);
@@ -72,6 +75,7 @@ public class CategoriesController(ApplicationContext db) : ControllerBase
     }
 
     [HttpPut("{categoryId}")]
+    [Authorize(Roles = "Supervisor, Admin")]
     public async Task<ActionResult> UpdateCategory([FromBody] CreateCategoryRequest request, [FromRoute] int categoryId)
     {
         var category = await db.Categories.FirstOrDefaultAsync(c => c.Id == categoryId);
