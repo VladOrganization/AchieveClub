@@ -13,7 +13,14 @@ public class DeliveryStatusesController(ApplicationContext db) : ControllerBase
     [Authorize(Roles = "Supervisor, Admin")]
     public async Task<ActionResult<List<DeliveryStatusResponse>>> GetAll()
     {
-        await DeliveryStatusNames.EnsureReceivedStatusAsync(db);
+        try
+        {
+            await DeliveryStatusNames.EnsureReceivedStatusAsync(db);
+        }
+        catch (DbUpdateException)
+        {
+            // Sequence/PK races must not block the statuses list.
+        }
 
         return await db.DeliveryStatuses
             .OrderBy(s => s.Id)

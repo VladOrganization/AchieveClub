@@ -218,21 +218,7 @@ public class OrdersController(ILogger<OrdersController> logger, ApplicationConte
 
         await using var tx = await db.Database.BeginTransactionAsync();
 
-        var cancelledStatus = await db.DeliveryStatuses
-            .FirstOrDefaultAsync(s =>
-                EF.Functions.ILike(s.Title, "%отклон%") ||
-                EF.Functions.ILike(s.Title, "%отмен%") ||
-                EF.Functions.ILike(s.Title, "%cancel%"));
-
-        if (cancelledStatus == null)
-        {
-            cancelledStatus = new DeliveryStatusDBO
-            {
-                Title = DeliveryStatusNames.CancelledTitle,
-                Color = DeliveryStatusNames.CancelledColor
-            };
-            db.DeliveryStatuses.Add(cancelledStatus);
-        }
+        var cancelledStatus = await DeliveryStatusNames.EnsureCancelledStatusAsync(db);
 
         if (order.User != null)
             order.User.Balance += order.Price;
