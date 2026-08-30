@@ -1,16 +1,16 @@
 ﻿using AchieveClub.Server.ApiContracts.Orders.Request;
 using AchieveClub.Server.ApiContracts.Orders.Response;
-using AchieveClub.Server.ApiContracts.Products.Response;
 using AchieveClub.Server.RepositoryItems;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.EntityFrameworkCore;
 
 namespace AchieveClub.Server.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class OrdersController(ILogger<OrdersController> logger, ApplicationContext db) : ControllerBase
+public class OrdersController(ILogger<OrdersController> logger, ApplicationContext db, IOutputCacheStore cache) : ControllerBase
 {
     [HttpGet]
     [Authorize]
@@ -105,7 +105,150 @@ public class OrdersController(ILogger<OrdersController> logger, ApplicationConte
         db.Orders.Add(order);
 
         await db.SaveChangesAsync();
+        await cache.EvictByTagAsync("achievements", CancellationToken.None);
 
         return Created();
+    }
+
+    [HttpGet("all")]
+    [Authorize(Roles = "Supervisor, Admin")]
+    public async Task<ActionResult<List<AdminOrderResponse>>> GetAllOrders(
+        [FromQuery] int? statusId,
+        [FromQuery] int? userId)
+    {
+        var query = db.Orders
+            .Include(o => o.Product)
+            .Include(o => o.DeliveryStatus)
+            .Include(o => o.User)
+            .Include(o => o.Variant)
+            .ThenInclude(v => v!.DefaultPhoto)
+            .AsQueryable();
+
+        if (statusId.HasValue)
+            query = query.Where(o => o.DeliveryStatusId == statusId.Value);
+
+        if (userId.HasValue)
+            query = query.Where(o => o.UserId == userId.Value);
+
+        return await query
+            .OrderByDescending(o => o.OrderDate)
+            .Select(o => new AdminOrderResponse(
+                o.Id,
+                o.UserId,
+                o.User!.FirstName,
+                o.User.LastName,
+                o.Product!.Type,
+                o.Product.Name,
+                o.Price,
+                o.Variant!.Name,
+                o.Variant.DefaultPhoto != null ? o.Variant.DefaultPhoto.Url : null,
+                o.OrderDate,
+                o.DeliveryStatusId,
+                o.DeliveryStatus!.Title,
+                o.DeliveryStatus.Color))
+            .ToListAsync();
+    }
+
+    [HttpPatch("{orderId:int}/status")]
+    [Authorize(Roles = "Supervisor, Admin")]
+    public async Task<ActionResult> ChangeStatus([FromRoute] int orderId, [FromBody] ChangeOrderStatusRequest request)
+    {
+        var order = await db.Orders
+            .Include(o => o.DeliveryStatus)
+            .FirstOrDefaultAsync(o => o.Id == orderId);
+
+        if (order == null)
+        {
+            logger.LogWarning("Order:{orderId} not found", orderId);
+            return NotFound($"Order:{orderId} not found");
+        }
+
+        if (DeliveryStatusNames.IsCancelled(order.DeliveryStatus?.Title))
+        {
+            logger.LogWarning("Order:{orderId} is already cancelled", orderId);
+            return Conflict("order cancelled");
+        }
+
+        var status = await db.DeliveryStatuses.FirstOrDefaultAsync(s => s.Id == request.StatusId);
+        if (status == null)
+        {
+            logger.LogWarning("Delivery status:{statusId} not found", request.StatusId);
+            return NotFound($"Delivery status:{request.StatusId} not found");
+        }
+
+        if (DeliveryStatusNames.IsCancelled(status.Title))
+        {
+            return BadRequest("Use cancel endpoint to reject an order and refund XP");
+        }
+
+        order.DeliveryStatusId = status.Id;
+        await db.SaveChangesAsync();
+
+        logger.LogInformation("Order:{orderId} status changed to {statusId} ({title})", orderId, status.Id, status.Title);
+        return NoContent();
+    }
+
+    [HttpPost("{orderId:int}/cancel")]
+    [Authorize(Roles = "Supervisor, Admin")]
+    public async Task<ActionResult> CancelOrder([FromRoute] int orderId)
+    {
+        var order = await db.Orders
+            .Include(o => o.User)
+            .Include(o => o.Variant)
+            .Include(o => o.DeliveryStatus)
+            .FirstOrDefaultAsync(o => o.Id == orderId);
+
+        if (order == null)
+        {
+            logger.LogWarning("Order:{orderId} not found", orderId);
+            return NotFound($"Order:{orderId} not found");
+        }
+
+        if (DeliveryStatusNames.IsCancelled(order.DeliveryStatus?.Title))
+        {
+            logger.LogWarning("Order:{orderId} is already cancelled", orderId);
+            return Conflict("order cancelled");
+        }
+
+        if (DeliveryStatusNames.IsReceived(order.DeliveryStatus?.Title))
+        {
+            logger.LogWarning("Order:{orderId} is already received", orderId);
+            return Conflict("order already received");
+        }
+
+        await using var tx = await db.Database.BeginTransactionAsync();
+
+        var cancelledStatus = await db.DeliveryStatuses
+            .FirstOrDefaultAsync(s =>
+                EF.Functions.ILike(s.Title, "%отклон%") ||
+                EF.Functions.ILike(s.Title, "%отмен%") ||
+                EF.Functions.ILike(s.Title, "%cancel%"));
+
+        if (cancelledStatus == null)
+        {
+            cancelledStatus = new DeliveryStatusDBO
+            {
+                Title = DeliveryStatusNames.CancelledTitle,
+                Color = DeliveryStatusNames.CancelledColor
+            };
+            db.DeliveryStatuses.Add(cancelledStatus);
+        }
+
+        if (order.User != null)
+            order.User.Balance += order.Price;
+
+        if (order.Variant != null)
+            order.Variant.Quantity++;
+
+        order.DeliveryStatus = cancelledStatus;
+        await db.SaveChangesAsync();
+        await tx.CommitAsync();
+        await cache.EvictByTagAsync("achievements", CancellationToken.None);
+
+        logger.LogInformation(
+            "Order:{orderId} cancelled. Refunded {price} XP to user:{userId}",
+            orderId, order.Price, order.UserId);
+
+        return NoContent();
     }
 }
