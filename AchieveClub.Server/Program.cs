@@ -129,15 +129,28 @@ namespace AchieveClub.Server
                     options.Cookie.IsEssential = true;
                 });
 
+            var authenticatedPermitLimit = builder.Configuration.GetValue("RateLimiting:AuthenticatedPermitLimit",
+                builder.Environment.IsDevelopment() ? 2000 : 400);
+            var anonymousPermitLimit = builder.Configuration.GetValue("RateLimiting:AnonymousPermitLimit",
+                builder.Environment.IsDevelopment() ? 200 : 40);
+            var rateLimitWindow = TimeSpan.FromSeconds(
+                builder.Configuration.GetValue("RateLimiting:WindowSeconds", 60));
+
             builder.Services.AddRateLimiter(options =>
             {
                 options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
                 {
-                    var clientIp = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-                    return RateLimitPartition.GetFixedWindowLimiter(clientIp, _ => new FixedWindowRateLimiterOptions
+                    var isAuthenticated = context.User.Identity?.IsAuthenticated == true;
+                    var partitionKey = isAuthenticated
+                        ? $"user:{context.User.Identity!.Name ?? "unknown"}"
+                        : $"ip:{context.Connection.RemoteIpAddress?.ToString() ?? "unknown"}";
+                    var permitLimit = isAuthenticated ? authenticatedPermitLimit : anonymousPermitLimit;
+
+                    return RateLimitPartition.GetSlidingWindowLimiter(partitionKey, _ => new SlidingWindowRateLimiterOptions
                     {
-                        PermitLimit = 100,
-                        Window = TimeSpan.FromMinutes(1),
+                        PermitLimit = permitLimit,
+                        Window = rateLimitWindow,
+                        SegmentsPerWindow = 6,
                         QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                         QueueLimit = 0
                     });
@@ -145,7 +158,7 @@ namespace AchieveClub.Server
                 options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
                 options.OnRejected = async (context, cancellationToken) =>
                 {
-                    context.HttpContext.Response.Headers.RetryAfter = "60";
+                    context.HttpContext.Response.Headers.RetryAfter = ((int)rateLimitWindow.TotalSeconds).ToString();
                     await context.HttpContext.Response.WriteAsync("Too many requests. Please try again later.", cancellationToken);
                 };
             });
