@@ -44,7 +44,7 @@ services:
       - traefik.http.services.achieve-api.loadbalancer.server.port=8080
 
   postgres:
-    image: postgres:latest
+    image: postgres:17
     container_name: postgres
     restart: always
     env_file: stack.env
@@ -82,7 +82,7 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
 
   watchtower:
-    image: containrrr/watchtower
+    image: nickfedor/watchtower:latest
     container_name: watchtower
     restart: always
     volumes:
