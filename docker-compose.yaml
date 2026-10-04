@@ -3,16 +3,16 @@ services:
     image: ghcr.io/vladorganization/achieve_club_frontend:latest
     container_name: achieve_club_frontend
     restart: always
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - certs:/etc/nginx/ssl:ro
-    environment:
-      - VITE_API_URL=https://byteschool.online
-      - VITE_API_PORT=5001
     networks:
-      - backend
+      - web
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=web
+      - traefik.http.routers.achieve-front.rule=Host(`app.byteschool.by`)
+      - traefik.http.routers.achieve-front.entrypoints=websecure
+      - traefik.http.routers.achieve-front.tls.certresolver=le
+      - traefik.http.services.achieve-front.loadbalancer.server.port=80
+
   backend:
     image: ghcr.io/vladorganization/achieve_club_backend:latest
     container_name: achieve_club_backend
@@ -23,18 +23,25 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    ports:
-      - "5000:8080"
-      - "5001:8081"
     volumes:
-      - certs:/var/letsencrypt
       - /home/ftpuser/ftp/upload/wwwroot:/app/wwwroot
     environment:
-      - ASPNETCORE_ENVIRONMENT=Production
+      # Staging, а не Production: в Production приложение требует PEM-сертификаты
+      # и делает редирект на HTTPS. TLS теперь терминирует Traefik.
+      - ASPNETCORE_ENVIRONMENT=Staging
+      - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
-      - ConnectionStrings__RedisConnection=redis:6379
+      - ConnectionStrings__RedisConnection=redis:6379,password=${REDIS_PASSWORD}
     networks:
+      - web
       - backend
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=web
+      - traefik.http.routers.achieve-api.rule=Host(`app.byteschool.by`)
+      - traefik.http.routers.achieve-api.entrypoints=api
+      - traefik.http.routers.achieve-api.tls.certresolver=le
+      - traefik.http.services.achieve-api.loadbalancer.server.port=8080
 
   postgres:
     image: postgres:latest
@@ -58,6 +65,7 @@ services:
     image: redis:7-alpine
     container_name: redis
     restart: always
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
     ports:
       - "6379:6379"
     volumes:
@@ -65,11 +73,13 @@ services:
     networks:
       - backend
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "redis-cli -a $$REDIS_PASSWORD ping | grep PONG"]
       interval: 10s
       timeout: 3s
       retries: 5
       start_period: 5s
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
 
   watchtower:
     image: containrrr/watchtower
@@ -87,8 +97,9 @@ services:
 volumes:
   postgres_data:
   redis_data:
-  certs:
 
 networks:
+  web:
+    external: true
   backend:
     driver: bridge
