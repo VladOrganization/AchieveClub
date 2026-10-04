@@ -15,6 +15,7 @@ namespace AchieveClub.Server.Controllers
         EmailProofService emailProof,
         ResendEmailSender emailSender,
         EmailSettings emailSettings,
+        IWebHostEnvironment env,
         ApplicationContext db
         ) : ControllerBase
     {
@@ -122,7 +123,7 @@ namespace AchieveClub.Server.Controllers
         }
 
         private string AssetsUrl => emailSettings.AssetsBaseUrl
-                                  ?? $"{Request.Scheme}://{Request.Host}/email";
+                                  ?? $"{(env.IsDevelopment() ? Request.Scheme : Uri.UriSchemeHttps)}://{Request.Host}/email";
 
         [HttpPost("validate_code")]
         public ActionResult ValidateProofCode([FromBody] ProofCodeRequest model)
