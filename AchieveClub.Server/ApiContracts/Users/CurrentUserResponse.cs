@@ -4,6 +4,6 @@ public record CurrentUserResponse(
     int Id,
     string FirstName,
     string LastName,
-    string Avatar,
+    string? Avatar,
     int XpSum,
     string Email);

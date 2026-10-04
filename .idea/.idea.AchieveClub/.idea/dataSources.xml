@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="achieve_club@localhost" uuid="e71a9ae1-1fe9-458e-9938-abc8dceba4b7">
+    <data-source source="LOCAL" name="achieve_club@localhost" uuid="8bae1312-a921-46dc-948a-b66e4facbd24">
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
-      <configured-by-url>true</configured-by-url>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
-      <jdbc-url>jdbc:postgresql://localhost/achieve_club?password=Qwerty12&amp;user=SA</jdbc-url>
+      <jdbc-url>jdbc:postgresql://localhost:5432/achieve_club</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
   </component>

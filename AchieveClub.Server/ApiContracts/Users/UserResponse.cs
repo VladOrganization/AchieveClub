@@ -4,5 +4,5 @@ public record UserResponse(
     int Id,
     string FirstName,
     string LastName,
-    string Avatar,
+    string? Avatar,
     int XpSum);

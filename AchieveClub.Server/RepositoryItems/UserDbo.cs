@@ -12,7 +12,7 @@ public class UserDbo
     [MaxLength(100)] public required string LastName { get; set; }
     [MaxLength(500)] public required string Email { get; set; }
     [MaxLength(256)] public required string Password { get; set; }
-    [MaxLength(4000)] public required string Avatar { get; set; }
+    [MaxLength(4000)] public string? Avatar { get; set; }
     public int Balance { get; set; }
     [MaxLength(256)] public string? RefreshToken { get; set; }
     public int RoleRefId { get; set; }

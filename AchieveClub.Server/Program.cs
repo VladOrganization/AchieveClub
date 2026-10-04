@@ -90,6 +90,18 @@ namespace AchieveClub.Server
             builder.Services.AddTransient<HashService>();
             builder.Services.AddTransient<EmailProofService>();
 
+            var emailSettings = new EmailSettings();
+            builder.Configuration.Bind("EmailSettings", emailSettings);
+            if (string.IsNullOrWhiteSpace(emailSettings.ApiKey))
+                throw new InvalidConfigurationException("Add 'EmailSettings:ApiKey' to config");
+            builder.Services.AddSingleton(emailSettings);
+            builder.Services.AddHttpClient<ResendEmailSender>(client =>
+            {
+                client.BaseAddress = new Uri("https://api.resend.com/");
+                client.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", emailSettings.ApiKey);
+            });
+
             builder.Services.AddAuthentication(i =>
                 {
                     i.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;

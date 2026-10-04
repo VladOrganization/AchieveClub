@@ -6,7 +6,8 @@ namespace AchieveClub.Server.Services
     public class EmailProofService(ILogger<EmailProofService> logger, IDistributedCache distributedCache)
     {
         private const string EmailProofCacheKey = "EmailProof";
-        private const int CacheDurationMinutes = 5;
+        public const int CacheDurationMinutes = 30;
+        private static readonly TimeSpan ResendTimeout = TimeSpan.FromMinutes(1);
 
         public record EmailProofItem(string Email, int ProofCode, DateTime CreatedAt);
         
@@ -19,13 +20,15 @@ namespace AchieveClub.Server.Services
             return proofCode;
         }
 
-        public bool Contains(string emailAddress)
+        public bool WasSentRecently(string emailAddress)
         {
-            var items = GetValidProofItems();
-            bool exists = items.Any(x => x.Email.Equals(emailAddress, StringComparison.OrdinalIgnoreCase));
-            
-            logger.LogDebug($"Contains check for email {emailAddress}: {exists}");
-            return exists;
+            var now = DateTime.UtcNow;
+            bool recent = GetValidProofItems().Any(x =>
+                x.Email.Equals(emailAddress, StringComparison.OrdinalIgnoreCase) &&
+                (now - x.CreatedAt) < ResendTimeout);
+
+            logger.LogDebug($"WasSentRecently check for email {emailAddress}: {recent}");
+            return recent;
         }
 
         private void StoreProofCode(string emailAddress, int proofCode)
