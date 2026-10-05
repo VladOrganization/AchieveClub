@@ -90,6 +90,13 @@ namespace AchieveClub.Server
             builder.Services.AddTransient<HashService>();
             builder.Services.AddTransient<EmailProofService>();
 
+            var googleSettings = new GoogleSettings();
+            builder.Configuration.Bind("Google", googleSettings);
+            if (string.IsNullOrWhiteSpace(googleSettings.ClientId))
+                throw new InvalidConfigurationException("Add 'Google:ClientId' to config");
+            builder.Services.AddSingleton(googleSettings);
+            builder.Services.AddHttpClient<GoogleAuthService>(client => client.Timeout = TimeSpan.FromSeconds(10));
+
             var emailSettings = new EmailSettings();
             builder.Configuration.Bind("EmailSettings", emailSettings);
             if (string.IsNullOrWhiteSpace(emailSettings.ApiKey))

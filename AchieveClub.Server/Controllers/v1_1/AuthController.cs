@@ -6,6 +6,7 @@ using AchieveClub.Server.Services;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
 
 namespace AchieveClub.Server.Controllers.v1_1
 {
@@ -16,7 +17,8 @@ namespace AchieveClub.Server.Controllers.v1_1
         JwtTokenCreator jwtCreator,
         ApplicationContext db,
         HashService hasher,
-        EmailProofService emailProof
+        EmailProofService emailProof,
+        GoogleAuthService google
         ) : ControllerBase
     {
 
@@ -85,6 +87,63 @@ namespace AchieveClub.Server.Controllers.v1_1
             emailProof.DeleteProofCode(model.EmailAddress);
             
             return new TokenPairResponce(newUser.Id, token, newUser.RefreshToken, expire, newUser.Role.Id);
+        }
+
+        [HttpPost("google/login")]
+        public async Task<ActionResult<TokenPairResponce>> GoogleLogin([FromBody] GoogleAuthRequest model)
+        {
+            var profile = await google.ValidateAsync(model.IdToken);
+            if (profile == null) return Unauthorized();
+
+            var email = profile.Email.ToLower();
+            var user = await db.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Email.ToLower() == email);
+            if (user == null) return NotFound("not_registered");
+
+            // Пользователь, зарегистрированный по email/паролю, входит через Google по совпадению email
+            user.Avatar ??= await google.DownloadAvatarAsync(profile.PictureUrl);
+            return await IssueTokens(user);
+        }
+
+        [HttpPost("google/registration")]
+        public async Task<ActionResult<TokenPairResponce>> GoogleRegistration([FromBody] GoogleAuthRequest model)
+        {
+            var profile = await google.ValidateAsync(model.IdToken);
+            if (profile == null) return Unauthorized();
+
+            var email = profile.Email.ToLower();
+            if (await db.Users.AnyAsync(u => u.Email.ToLower() == email))
+                return Conflict("email");
+
+            if (await db.Users.AnyAsync(u => u.FirstName == profile.FirstName && u.LastName == profile.LastName))
+                return Conflict("name");
+
+            // Пароль неизвестен никому: валидный хеш случайного значения.
+            // Задать свой пароль можно через "Забыли пароль?" (код на почту).
+            var unusablePassword = hasher.HashPassword(Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))).ToString();
+
+            var newUser = new UserDbo
+            {
+                FirstName = profile.FirstName,
+                LastName = profile.LastName,
+                Email = profile.Email,
+                Password = unusablePassword,
+                Avatar = await google.DownloadAvatarAsync(profile.PictureUrl),
+                RoleRefId = 1,
+                Role = await db.Roles.FirstAsync(r => r.Id == 1)
+            };
+
+            db.Users.Add(newUser);
+            return await IssueTokens(newUser);
+        }
+
+        private async Task<ActionResult<TokenPairResponce>> IssueTokens(UserDbo user)
+        {
+            user.RefreshToken = GenerateRefreshToken();
+            if (await db.SaveChangesAsync() < 1)
+                return Unauthorized();
+
+            (string token, long expire) = GenerateJwtByUser(user);
+            return new TokenPairResponce(user.Id, token, user.RefreshToken, expire, user.Role.Id);
         }
 
         [HttpPost("refresh")]
