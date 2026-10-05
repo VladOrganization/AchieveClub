@@ -89,6 +89,10 @@ namespace AchieveClub.Server.Controllers.v1_1
             return new TokenPairResponce(newUser.Id, token, newUser.RefreshToken, expire, newUser.Role.Id);
         }
 
+        /// <summary>Публичный Google Client ID для фронтенда (берется из env бэкенда).</summary>
+        [HttpGet("google/client-id")]
+        public ActionResult<string> GoogleClientId([FromServices] GoogleSettings settings) => settings.ClientId;
+
         [HttpPost("google/login")]
         public async Task<ActionResult<TokenPairResponce>> GoogleLogin([FromBody] GoogleAuthRequest model)
         {
