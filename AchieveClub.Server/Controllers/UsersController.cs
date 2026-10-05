@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using AchieveClub.Server.ApiContracts.Users;
+using AchieveClub.Server.ApiContracts.Auth.Request;
+using AchieveClub.Server.Auth;
 using AchieveClub.Server.Services;
 
 namespace AchieveClub.Server.Controllers
@@ -14,13 +16,17 @@ namespace AchieveClub.Server.Controllers
     public class UsersController(
         ApplicationContext db,
         ILogger<UsersController> logger,
-        EmailProofService emailProof
+        EmailProofService emailProof,
+        HashService hasher
         ) : ControllerBase
     {
         public record ChangeRoleRequest([Required] int UserId, [Required] int RoleId);
 
         public record ChangeEmailRequest([Required] int ProofCode, [Required, EmailAddress] string EmailAddress);
-        public record ChangeNameRequest(string? FirstName, string? LastName);
+        public record ChangeCurrentPasswordRequest([Required, StrongPassword] string Password);
+        public record ChangeNameRequest(
+            [Required, StringLength(100, MinimumLength = 2)] string FirstName,
+            [Required, StringLength(100, MinimumLength = 5)] string LastName);
 
         [Authorize]
         [HttpGet("current")]
@@ -151,8 +157,8 @@ namespace AchieveClub.Server.Controllers
                 return NotFound($"User with userId:{userId} not found");
             }
 
-            if (request.FirstName is { Length: >= 2 }) user.FirstName = request.FirstName;
-            if (request.LastName is { Length: >= 5 }) user.LastName = request.LastName;
+            user.FirstName = request.FirstName.Trim();
+            user.LastName = request.LastName.Trim();
 
             await db.SaveChangesAsync(ct);
             
@@ -178,11 +184,49 @@ namespace AchieveClub.Server.Controllers
                 return NotFound($"User with userId:{userId} not found");
             }
             
-            if (emailProof.ValidateProofCode(request.EmailAddress, request.ProofCode) == false)
-                return Unauthorized();
+            var newEmail = request.EmailAddress.Trim();
 
-            user.Email = request.EmailAddress;
+            if (string.Equals(user.Email, newEmail, StringComparison.OrdinalIgnoreCase))
+                return Conflict("same");
 
+            if (emailProof.ValidateProofCode(newEmail, request.ProofCode) == false)
+                return BadRequest("code");
+
+            var lowered = newEmail.ToLower();
+            if (await db.Users.AnyAsync(u => u.Id != userId && u.Email.ToLower() == lowered, ct))
+            {
+                logger.LogWarning("User with this email address already exist. Email: {email}", newEmail);
+                return Conflict("email");
+            }
+
+            user.Email = newEmail;
+
+            await db.SaveChangesAsync(ct);
+            emailProof.DeleteProofCode(newEmail);
+
+            return NoContent();
+        }
+
+        [Authorize]
+        [HttpPatch("change_password")]
+        public async Task<ActionResult> ChangePassword([FromBody] ChangeCurrentPasswordRequest request, CancellationToken ct)
+        {
+            var userIdString = HttpContext.User.Identity?.Name;
+            if (userIdString == null || int.TryParse(userIdString, out int userId) == false)
+            {
+                logger.LogWarning("Access token not contains userId or userId is the wrong format: {userIdString}",
+                    userIdString);
+                return NotFound($"Access token not contains userId or userId is the wrong format: {userIdString}");
+            }
+
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
+            if (user == null)
+            {
+                logger.LogWarning("User with userId:{userId} not found", userId);
+                return NotFound($"User with userId:{userId} not found");
+            }
+
+            user.Password = hasher.HashPassword(request.Password).ToString();
             await db.SaveChangesAsync(ct);
 
             return NoContent();

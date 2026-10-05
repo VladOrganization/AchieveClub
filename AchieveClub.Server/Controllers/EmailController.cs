@@ -61,19 +61,26 @@ namespace AchieveClub.Server.Controllers
                 return NotFound($"Access token not contains userId or userId is the wrong format: {userIdString}");
             }
 
-            if (await db.Users.AnyAsync(u => u.Id == userId) == false)
+            var currentEmail = await db.Users.Where(u => u.Id == userId).Select(u => u.Email).FirstOrDefaultAsync(ct);
+            if (currentEmail == null)
             {
                 logger.LogWarning("User with userId:{userId} not found", userId);
                 return NotFound($"User with userId:{userId} not found");
             }
-            
+
+            emailAddress = emailAddress.Trim();
+
+            if (string.Equals(currentEmail, emailAddress, StringComparison.OrdinalIgnoreCase))
+                return Conflict("same");
+
             if (emailProof.WasSentRecently(emailAddress))
             {
                 logger.LogWarning("Timeout limit for email sending. Email: {emailAddress}", emailAddress);
                 return Conflict("timeout");
             }
 
-            if (db.Users.Any(u => u.Email == emailAddress))
+            var lowered = emailAddress.ToLower();
+            if (await db.Users.AnyAsync(u => u.Email.ToLower() == lowered, ct))
             {
                 logger.LogWarning("User with this email address already exist. Email: {emailAddress}", emailAddress);
                 return Conflict("email");
