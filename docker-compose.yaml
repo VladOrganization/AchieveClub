@@ -89,8 +89,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - WATCHTOWER_CLEANUP=true
-      - WATCHTOWER_POLL_INTERVAL=300
-    command: --interval 300 --debug ghcr.io/vladorganization/achieve_club_backend
+      - WATCHTOWER_POLL_INTERVAL=180
+    command: --interval 180 --debug achieve_club_backend achieve_club_frontend
     networks:
       - backend
 
