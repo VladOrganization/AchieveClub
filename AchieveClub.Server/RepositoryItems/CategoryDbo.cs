@@ -16,4 +16,5 @@ public class CategoryDbo
     public string? AvailableBanner  { get; set; }
     [MaxLength(1000)]
     public string? UnavailableBanner  { get; set; }
+    public bool Show { get; set; } = true;
 }

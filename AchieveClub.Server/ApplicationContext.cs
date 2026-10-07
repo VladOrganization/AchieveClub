@@ -37,6 +37,10 @@ public class ApplicationContext : DbContext
         modelBuilder
             .Entity<CompletedAchievementDbo>()
             .HasOne(ca => ca.Supervisor);
+        modelBuilder
+            .Entity<CompletedAchievementDbo>()
+            .HasIndex(ca => new { ca.UserRefId, ca.AchieveRefId })
+            .IsUnique();
 
         modelBuilder
             .Entity<VariantDbo>()

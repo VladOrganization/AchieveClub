@@ -68,7 +68,13 @@ namespace AchieveClub.Server.Controllers
                 .Include(ca => ca.Achievement)
                 .SumAsync(ca => ca.Achievement!.Xp);
 
-            return user.ToUserState(xpSum);
+            var completedCount = await db.CompletedAchievements
+                .Where(ca => ca.UserRefId == userId)
+                .Select(ca => ca.AchieveRefId)
+                .Distinct()
+                .CountAsync();
+
+            return user.ToUserState(xpSum, completedCount);
         }
 
         [HttpGet]
@@ -78,10 +84,16 @@ namespace AchieveClub.Server.Controllers
             return await db.Users
                 .Include(u => u.Role)
                 .Where(u => u.Role.Title == "Student")
-                .Select(u => u.ToUserState(db.CompletedAchievements
-                    .Where(ca => ca.UserRefId == u.Id)
-                    .Include(ca => ca.Achievement)
-                    .Sum(ca => ca.Achievement!.Xp)))
+                .Select(u => u.ToUserState(
+                    db.CompletedAchievements
+                        .Where(ca => ca.UserRefId == u.Id)
+                        .Include(ca => ca.Achievement)
+                        .Sum(ca => ca.Achievement!.Xp),
+                    db.CompletedAchievements
+                        .Where(ca => ca.UserRefId == u.Id)
+                        .Select(ca => ca.AchieveRefId)
+                        .Distinct()
+                        .Count()))
                 .ToListAsync(ct);
         }
 
@@ -89,10 +101,16 @@ namespace AchieveClub.Server.Controllers
         public async Task<ActionResult<List<UserResponse>>> GetAll(CancellationToken ct)
         {
             return await db.Users
-                .Select(u => u.ToUserState(db.CompletedAchievements
-                    .Where(ca => ca.UserRefId == u.Id)
-                    .Include(ca => ca.Achievement)
-                    .Sum(ca => ca.Achievement!.Xp)))
+                .Select(u => u.ToUserState(
+                    db.CompletedAchievements
+                        .Where(ca => ca.UserRefId == u.Id)
+                        .Include(ca => ca.Achievement)
+                        .Sum(ca => ca.Achievement!.Xp),
+                    db.CompletedAchievements
+                        .Where(ca => ca.UserRefId == u.Id)
+                        .Select(ca => ca.AchieveRefId)
+                        .Distinct()
+                        .Count()))
                 .ToListAsync(ct);
         }
 

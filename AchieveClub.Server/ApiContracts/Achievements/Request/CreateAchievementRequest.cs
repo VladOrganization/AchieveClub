@@ -8,7 +8,6 @@ namespace AchieveClub.Server.ApiContracts.Achievements.Request
         [Required, StringLength(300, MinimumLength = 5)]
         string Description,
         [Required] string LogoURL,
-        [Required, Range(0, double.MaxValue)] int Xp,
-        [Required] bool IsMultiple
+        [Required, Range(0, double.MaxValue)] int Xp
     );
 }

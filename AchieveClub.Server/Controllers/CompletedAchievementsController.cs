@@ -202,17 +202,15 @@ namespace AchieveClub.Server.Controllers
                     return NotFound($"Achievement with achieveId:{achieveId} not found");
                 }
 
-                if (achievement.IsMultiple == false)
+                if (achievements.Any(a => a.Id == achievement.Id) ||
+                    await db.CompletedAchievements.AnyAsync(
+                        ca => ca.UserRefId == user.Id && ca.AchieveRefId == achievement.Id, ct))
                 {
-                    if (await db.CompletedAchievements.AnyAsync(
-                            ca => ca.UserRefId == user.Id && ca.AchieveRefId == achievement.Id, ct))
-                    {
-                        logger.LogWarning(
-                            "This achievement:{achieveId} has already been completed for this user:{model.UserId}. You cannot complete this achievement more than once",
-                            achieveId, model.UserId);
-                        return BadRequest(
-                            $"This achievement:{achieveId} has already been completed for this user:{model.UserId}. You cannot complete this achievement more than once");
-                    }
+                    logger.LogWarning(
+                        "This achievement:{achieveId} has already been completed for this user:{model.UserId}. You cannot complete this achievement more than once",
+                        achieveId, model.UserId);
+                    return BadRequest(
+                        $"This achievement:{achieveId} has already been completed for this user:{model.UserId}. You cannot complete this achievement more than once");
                 }
 
                 var timeLimit = achievement.TimeLimitInDays;

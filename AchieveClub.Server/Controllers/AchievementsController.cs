@@ -52,8 +52,7 @@ namespace AchieveClub.Server.Controllers
                 Title = model.Title,
                 Description = model.Description,
                 LogoURL = model.LogoURL,
-                Xp = model.Xp,
-                IsMultiple = model.IsMultiple
+                Xp = model.Xp
             };
 
             var entry = await db.Achievements.AddAsync(newAchievement);
@@ -80,7 +79,6 @@ namespace AchieveClub.Server.Controllers
             achievement.Description = request.Description;
             achievement.LogoURL = request.LogoURL;
             achievement.Xp = request.Xp;
-            achievement.IsMultiple = request.IsMultiple;
 
             await db.SaveChangesAsync();
             logger.LogInformation("Achievement updated: {request}", request);

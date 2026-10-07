@@ -3,6 +3,7 @@ using System;
 using AchieveClub.Server;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AchieveClub.Server.Migrations
 {
     [DbContext(typeof(ApplicationContext))]
-    partial class ApplicationContextModelSnapshot : ModelSnapshot
+    [Migration("20251007120000_SingleCompletionAchievements")]
+    partial class SingleCompletionAchievements
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -78,9 +81,6 @@ namespace AchieveClub.Server.Migrations
 
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("timestamp without time zone");
-
-                    b.Property<bool>("Show")
-                        .HasColumnType("boolean");
 
                     b.Property<DateTime?>("StartDate")
                         .HasColumnType("timestamp without time zone");

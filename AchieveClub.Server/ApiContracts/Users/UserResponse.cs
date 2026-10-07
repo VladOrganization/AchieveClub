@@ -5,4 +5,5 @@ public record UserResponse(
     string FirstName,
     string LastName,
     string? Avatar,
-    int XpSum);
+    int XpSum,
+    int CompletedCount = 0);

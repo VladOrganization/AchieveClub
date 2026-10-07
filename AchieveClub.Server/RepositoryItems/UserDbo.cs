@@ -18,6 +18,6 @@ public class UserDbo
     public int RoleRefId { get; set; }
     [ForeignKey(nameof(RoleRefId))] public required RoleDbo Role { get; set; }
 
-    public UserResponse ToUserState(int xpSum) => new UserResponse(Id, FirstName, LastName, Avatar, xpSum);
+    public UserResponse ToUserState(int xpSum, int completedCount = 0) => new UserResponse(Id, FirstName, LastName, Avatar, xpSum, completedCount);
     public CurrentUserResponse ToCurrentUserState(int xpSum) => new CurrentUserResponse(Id, FirstName, LastName, Avatar, xpSum, Email);
 }

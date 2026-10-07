@@ -155,8 +155,8 @@ namespace AchieveClub.Server
                     var clientIp = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
                     return RateLimitPartition.GetFixedWindowLimiter(clientIp, _ => new FixedWindowRateLimiterOptions
                     {
-                        PermitLimit = 100,
-                        Window = TimeSpan.FromMinutes(1),
+                        PermitLimit = 10,
+                        Window = TimeSpan.FromSeconds(1),
                         QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                         QueueLimit = 0
                     });
@@ -164,7 +164,7 @@ namespace AchieveClub.Server
                 options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
                 options.OnRejected = async (context, cancellationToken) =>
                 {
-                    context.HttpContext.Response.Headers.RetryAfter = "60";
+                    context.HttpContext.Response.Headers.RetryAfter = "1";
                     await context.HttpContext.Response.WriteAsync("Too many requests. Please try again later.", cancellationToken);
                 };
             });
