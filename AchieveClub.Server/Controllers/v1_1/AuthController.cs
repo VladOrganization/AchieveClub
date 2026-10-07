@@ -59,6 +59,10 @@ namespace AchieveClub.Server.Controllers.v1_1
             if (db.Users.Any(u => u.FirstName == model.FirstName && u.LastName == model.LastName))
                 return Conflict("name");
 
+            //Avatar: only one of the preset avatars (own photo is uploaded after registration)
+            if (model.AvatarURL != null && AvatarController.PresetExists(model.AvatarURL) == false)
+                return BadRequest("avatar");
+
             //Hash Password
             var passwordHash = hasher.HashPassword(model.Password).ToString();
 

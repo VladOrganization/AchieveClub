@@ -1,0 +1,15 @@
+meta {
+  name: Upload Avatar Preset
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/avatar/presets
+  body: multipartForm
+  auth: inherit
+}
+
+body:multipart-form {
+  file: @file(C:\Users\vladi\Pictures\users\avatar.jpg)
+}

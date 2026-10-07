@@ -1,0 +1,17 @@
+meta {
+  name: Select Avatar Preset
+  type: http
+  seq: 11
+}
+
+put {
+  url: {{base_url}}/avatar/presets/select
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "path": "avatars/presets/00000000-0000-0000-0000-000000000000.webp"
+  }
+}

@@ -1,0 +1,15 @@
+meta {
+  name: Delete Avatar Preset
+  type: http
+  seq: 2
+}
+
+delete {
+  url: {{base_url}}/avatar/presets/{{fileName}}
+  body: none
+  auth: inherit
+}
+
+vars:pre-request {
+  fileName: 00000000-0000-0000-0000-000000000000.webp
+}

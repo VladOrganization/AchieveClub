@@ -26,7 +26,7 @@ namespace AchieveClub.Server.Controllers
         public record ChangeCurrentPasswordRequest([Required, StrongPassword] string Password);
         public record ChangeNameRequest(
             [Required, StringLength(100, MinimumLength = 2)] string FirstName,
-            [Required, StringLength(100, MinimumLength = 5)] string LastName);
+            [Required, StringLength(100, MinimumLength = 4)] string LastName);
 
         [Authorize]
         [HttpGet("current")]
