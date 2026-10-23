@@ -84,6 +84,9 @@ namespace AchieveClub.Server.Controllers
             return await db.Users
                 .Include(u => u.Role)
                 .Where(u => u.Role.Title == "Student")
+                .Where(u => db.CompletedAchievements
+                    .Where(ca => ca.UserRefId == u.Id)
+                    .Sum(ca => ca.Achievement!.Xp) > 1)
                 .Select(u => u.ToUserState(
                     db.CompletedAchievements
                         .Where(ca => ca.UserRefId == u.Id)
