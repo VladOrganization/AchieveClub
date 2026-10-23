@@ -31,7 +31,8 @@ public class CategoriesController(
             {
                 var available = (category.StartDate == null || category.EndDate == null ||
                                  category.StartDate <= DateTime.Now && category.EndDate >= DateTime.Now) &&
-                                db.Products.Any(p => p.CategoryId == category.Id);
+                                db.Products.Any(p => p.CategoryId == category.Id &&
+                                                     p.Variants!.Any(v => v.Quantity > 0));
                 return new SmallCategoryResponse(
                     category.Id,
                     category.Title,
