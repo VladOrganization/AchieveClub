@@ -17,8 +17,8 @@ public class CategoriesController(
     ApplicationContext db,
     IOutputCacheStore cache) : ControllerBase
 {
-    private const int BannerMaxWidth = 1920;
-    private const int BannerMaxHeight = 1080;
+    private const int BannerMaxWidth = 3840;
+    private const int BannerMaxHeight = 2160;
 
     [HttpGet]
     [OutputCache(Duration = (3 * 60), Tags = ["achievements"])]

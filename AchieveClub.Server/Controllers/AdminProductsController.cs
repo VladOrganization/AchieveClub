@@ -217,7 +217,7 @@ public class AdminProductsController(
 
             image.Mutate(x => x.Resize(new ResizeOptions
             {
-                Size = new Size(1200, 1200),
+                Size = new Size(2400, 2400),
                 Mode = ResizeMode.Max
             }));
 
